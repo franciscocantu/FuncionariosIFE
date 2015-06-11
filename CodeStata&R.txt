@@ -6,8 +6,6 @@ use "/afs/crc.nd.edu/user/s/sleyguti/data060615_nomiss.dta”, clear
 
 * Create new variables:
 
-mvdecode _all, mv(999999=.)
-
 
 gen pri_perctminus1secc=pritminus1secc/lnsecctminus1
 gen prd_perctminus1secc=prdtminus1secc/lnsecctminus1
@@ -56,11 +54,10 @@ gen panstrg=0
 recode panstrg 0=1 if pan_perctminus1muni>prd_perctminus1muni & pan_perctminus1muni>pri_perctminus1muni & pan_perctminus2muni>pri_perctminus2muni & pan_perctminus2muni>pri_perctminus2muni
 
 
+**Dropping useless variables (and reducing the size of the file)
 
-
-3. Comprimir la base de datos:
 a. Borrar variables
-drop v1 lnsecct lnmunit lnsecctminus1 lnmunitminus1 lnsecctminus2 lnmunitminus2 pritminus1secc pantminus1secc prdtminus1secc totaltminus1secc pritminus1muni pantminus1muni prdtminus1muni totaltminus1muni pritminus2secc pantminus2secc prdtminus2secc totaltminus2secc pritminus2muni pantminus2muni prdtminus2muni totaltminus2muni pvemi pvemw senior cabecera distrito nombre_estado sexo notificacion nombramiento
+drop v1 lnsecct lnmunit lnsecctminus1 lnmunitminus1 lnsecctminus2 lnmunitminus2 pritminus1secc pantminus1secc prdtminus1secc totaltminus1secc pritminus1muni pantminus1muni prdtminus1muni totaltminus1muni pritminus2secc pantminus2secc prdtminus2secc totaltminus2secc pritminus2muni pantminus2muni prdtminus2muni totaltminus2muni pvemi pvemw senior cabecera distrito nombre_estado sexo notificacion nombramiento yearalternancia
 
 drop cve_inegi locality hom_tminus2 hom_tminus3 hom_tminus1 locality1 year2 id_mun nom_ent_inegi nom_mun_inegi cve_mun_inegi clave observaciones_notificacion observacion_nombramiento year1 id_seccion
 

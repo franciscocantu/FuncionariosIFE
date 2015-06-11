@@ -1,0 +1,448 @@
+* Open file:
+
+
+use "/afs/crc.nd.edu/user/s/sleyguti/data060615_nomiss.dta”, clear
+
+
+* Create new variables:
+
+mvdecode _all, mv(999999=.)
+
+
+gen pri_perctminus1secc=pritminus1secc/lnsecctminus1
+gen prd_perctminus1secc=prdtminus1secc/lnsecctminus1
+gen pan_perctminus1secc=pantminus1secc/lnsecctminus1
+gen turnout_tminus1secc=totaltminus1secc/lnsecctminus1
+
+gen pri_perctminus2secc=pritminus2secc/lnsecctminus2
+gen prd_perctminus2secc=prdtminus2secc/lnsecctminus2
+gen pan_perctminus2secc=pantminus2secc/lnsecctminus2
+gen turnout_tminus2secc=totaltminus2secc/lnsecctminus2
+
+gen percsenior=senior/pob
+
+gen homrate=(hom_t/pob)*100000
+gen homrate_tminus1=(hom_tminus1/pob)*100000
+
+gen homratechange=homrate-homrate_tminus1
+
+
+gen pri_perctminus1muni=pritminus1muni/lnmunitminus1
+gen prd_perctminus1muni=prdtminus1muni/lnmunitminus1
+gen pan_perctminus1muni=pantminus1muni/lnmunitminus1
+gen turnout_tminus1muni=totaltminus1muni/lnmunitminus1
+
+gen pri_perctminus2muni=pritminus2muni/lnmunitminus2
+gen prd_perctminus2muni=prdtminus2muni/lnmunitminus2
+gen pan_perctminus2muni=pantminus2muni/lnmunitminus2
+gen turnout_tminus2muni=totaltminus2muni/lnmunitminus2
+
+gen age2=age^2
+
+gen lnpob=ln(pob)
+
+gen presidential=0
+recode presidential 0=1 if year==2000
+recode presidential 0=1 if year==2006
+recode presidential 0=1 if year==2012
+
+gen pristrg=0
+recode pristrg 0=1 if pri_perctminus1muni>prd_perctminus1muni & pri_perctminus1muni>pan_perctminus1muni & pri_perctminus2muni>prd_perctminus2muni & pri_perctminus2muni>pan_perctminus2muni
+
+gen prdstrg=0
+recode prdstrg 0=1 if prd_perctminus1muni>pri_perctminus1muni & prd_perctminus1muni>pan_perctminus1muni & prd_perctminus2muni>pri_perctminus2muni & prd_perctminus2muni>pan_perctminus2muni
+
+gen panstrg=0
+recode panstrg 0=1 if pan_perctminus1muni>prd_perctminus1muni & pan_perctminus1muni>pri_perctminus1muni & pan_perctminus2muni>pri_perctminus2muni & pan_perctminus2muni>pri_perctminus2muni
+
+
+
+
+3. Comprimir la base de datos:
+a. Borrar variables
+drop v1 lnsecct lnmunit lnsecctminus1 lnmunitminus1 lnsecctminus2 lnmunitminus2 pritminus1secc pantminus1secc prdtminus1secc totaltminus1secc pritminus1muni pantminus1muni prdtminus1muni totaltminus1muni pritminus2secc pantminus2secc prdtminus2secc totaltminus2secc pritminus2muni pantminus2muni prdtminus2muni totaltminus2muni pvemi pvemw senior cabecera distrito nombre_estado sexo notificacion nombramiento
+
+drop cve_inegi locality hom_tminus2 hom_tminus3 hom_tminus1 locality1 year2 id_mun nom_ent_inegi nom_mun_inegi cve_mun_inegi clave observaciones_notificacion observacion_nombramiento year1 id_seccion
+
+drop turnout_tminus2muni pan_perctminus2muni prd_perctminus2muni pri_perctminus2muni turnout_tminus1muni pan_perctminus1muni prd_perctminus1muni pri_perctminus1muni turnout_tminus2secc pan_perctminus2secc prd_perctminus2secc pri_perctminus2secc
+
+b. Borrar observaciones
+drop if reject==.
+drop if homrate==.
+drop if primayor==.
+drop if porc_pea2sm==.
+drop if pri_perctminus1secc==.
+drop if prop_alfa==.
+drop if sexratio==.
+drop if prop_sewage==.
+
+
+4. Pasar la base a .txt
+
+export delimited using "/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley.txt", delimiter(";") replace
+
+5. Instalar los paquetes de bigmemory antes de abrir R (no se porque tengo que hacer esto cada vez que abro R).
+
+cd /afs/crc.nd.edu/user/s/sleyguti/R
+
+cp /tmp/for_sandra/*tar .
+
+module load R
+     R CMD INSTALL -l  /afs/crc.nd.edu/user/s/sleyguti/R bigmemory.sri_0.1.3.tar
+     R CMD INSTALL -l  /afs/crc.nd.edu/user/s/sleyguti/R BH_1.54.0-5.tar
+     R CMD INSTALL -l  /afs/crc.nd.edu/user/s/sleyguti/R bigmemory_4.4.6.tar
+
+setenv R_LIBS /afs/crc.nd.edu/user/s/sleyguti/R
+
+
+6. Abrir R y cargar los paquetes
+
+library(bigmemory)
+library(biglm)
+library(biganalytics)
+library(bigtabulate)
+
+
+7. Importar la base en .txt y pasarla a .desc 
+
+funcionarios <- read.big.matrix("/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley.txt", sep = ";", header = TRUE, type = "double", backingfile = "funcionarios.bin", descriptor = "funcionarios.desc")
+
+8. Salir de R y repetir paso 6.
+
+9. Abrir la base
+
+xfunc <- dget("/afs/crc.nd.edu/user/s/sleyguti/R/funcionarios.desc")
+funcionarios <- attach.big.matrix(xfunc)
+
+10. Un logit basico
+
+big_logmod = bigglm(reject ~ female + age + age2 , family = binomial("logit"), data = funcionarios, sandwich=TRUE, maxit=50)
+
+summary(big_logmod)
+
+big_logmod = bigglm(reject ~  female + age + age2 + homrate, family = binomial("logit"), data = funcionarios, sandwich=TRUE, maxit=50)
+
+summary(big_logmod)
+
+big_logmod = bigglm(reject ~  female + age + age2 + homrate + homratechange, family = binomial("logit"), data = funcionarios, sandwich=TRUE, maxit=50)
+
+summary(big_logmod)
+
+big_logmod = bigglm(reject ~ female + age + age2 + prd_perctminus1secc+ pan_perctminus1secc+ turnout_tminus1secc + homrate + homratechange +prop_sewage+ prdmayor+ panmayor+primayor+ prop_alfa+ lnpob+presidential, family = binomial("logit"), data = funcionarios, sandwich=TRUE, maxit=50)
+summary(big_logmod)
+
+
+big_logmod = bigglm(reject ~ female + age + age2 + prd_perctminus1secc+ pan_perctminus1secc+ prd_perctminus1secc + turnout_tminus1secc + homrate + homratechange +percsenior+prop_sewage+ prdmayor+ panmayor+ prop_alfa+ lnpob+prop_alfa*female + prd_perctminus1secc*primayor+ prd_perctminus1secc*panmayor + pan_perctminus1secc*prdmayor +pan_perctminus1secc*primayor+presidential, family = binomial("logit"), data = funcionarios, sandwich=TRUE, maxit=50)
+
+summary(big_logmod)
+
+*************
+
+Stata
+insheet using "/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley.txt", delimiter(";") 
+keep if year==2000
+export delimited using "/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2000.txt", delimiter(";") replace
+
+cd /afs/crc.nd.edu/user/s/sleyguti/R
+setenv R_LIBS /afs/crc.nd.edu/user/s/sleyguti/R
+module load R
+R
+
+library(bigmemory)
+library(biglm)
+library(biganalytics)
+library(bigtabulate)
+
+
+big_logmod = bigglm(reject ~ female + age + age2 + prd_perctminus1secc+ pan_perctminus1secc+ prd_perctminus1secc + turnout_tminus1secc + homrate + homratechange +percsenior+prop_sewage+ prdmayor+ panmayor+ prop_alfa+ lnpob+prop_alfa*female + prd_perctminus1secc*pristrg+prd_perctminus1secc*panstrg + pan_perctminus1secc*prdstrg +pan_perctminus1secc*pristrg+pristrg+prdstrg+panstrg, family = binomial("logit"), data = funcionarios2000, sandwich=TRUE, maxit=50)
+
+summary(big_logmod)
+
+
+funcionarios2000 <- read.big.matrix("/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2000.txt", sep = ";", header = TRUE, type = "double", backingfile = "funcionarios2000.bin", descriptor = "funcionarios2000.desc")
+
+
+funcionarios2003 <- read.big.matrix("/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2003.txt", sep = ";", header = TRUE, type = "double", backingfile = "funcionarios2003.bin", descriptor = "funcionarios2003.desc")
+
+funcionarios2006 <- read.big.matrix("/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2006.txt", sep = ";", header = TRUE, type = "double", backingfile = "funcionarios2006.bin", descriptor = "funcionarios2006.desc")
+
+funcionarios2009 <- read.big.matrix("/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2009.txt", sep = ";", header = TRUE, type = "double", backingfile = "funcionarios2009.bin", descriptor = "funcionarios2009.desc")
+
+funcionarios2012 <- read.big.matrix("/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2012.txt", sep = ";", header = TRUE, type = "double", backingfile = "funcionarios2012.bin", descriptor = "funcionarios2012.desc")
+
+Stata
+insheet using "/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley.txt", delimiter(";") 
+keep if year==2003
+export delimited using "/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2003.txt", delimiter(";") replace
+
+q()
+n
+
+cd /afs/crc.nd.edu/user/s/sleyguti/R
+setenv R_LIBS /afs/crc.nd.edu/user/s/sleyguti/R
+module load R
+R
+
+library(bigmemory)
+library(biglm)
+library(biganalytics)
+library(bigtabulate)
+
+
+
+funcionarios2003 <- read.big.matrix("/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2003.txt", sep = ";", header = TRUE, type = "double", backingfile = "funcionarios2003.bin", descriptor = "funcionarios2003.desc")
+
+
+q()
+n
+
+cd /afs/crc.nd.edu/user/s/sleyguti/R
+setenv R_LIBS /afs/crc.nd.edu/user/s/sleyguti/R
+module load R
+R
+
+library(bigmemory)
+library(biglm)
+library(biganalytics)
+library(bigtabulate)
+
+xfunc <- dget("/afs/crc.nd.edu/user/s/sleyguti/R/funcionarios2000.desc")
+funcionarios2000 <- attach.big.matrix(xfunc)
+
+big_logmod = bigglm(reject ~ female + age + age2 + prd_perctminus1secc+ pan_perctminus1secc+ prd_perctminus1secc + turnout_tminus1secc + homrate + homratechange +percsenior+prop_sewage+ prdmayor+ panmayor+ prop_alfa+ lnpob+prop_alfa*female + prd_perctminus1secc*pristrg+prd_perctminus1secc*panstrg + pan_perctminus1secc*prdstrg +pan_perctminus1secc*pristrg+pristrg+prdstrg+panstrg, family = binomial("logit"), data = funcionarios2000, sandwich=TRUE, maxit=50)
+
+xfunc <- dget("/afs/crc.nd.edu/user/s/sleyguti/R/funcionarios2003.desc")
+funcionarios2003 <- attach.big.matrix(xfunc)
+
+big_logmod = bigglm(reject ~ female + age + age2 + prd_perctminus1secc+ pan_perctminus1secc+ prd_perctminus1secc + turnout_tminus1secc + homrate + homratechange +percsenior+prop_sewage+ prdmayor+ panmayor+ prop_alfa+ lnpob+prop_alfa*female + prd_perctminus1secc*pristrg+prd_perctminus1secc*panstrg + pan_perctminus1secc*prdstrg +pan_perctminus1secc*pristrg+pristrg+prdstrg+panstrg, family = binomial("logit"), data = funcionarios2003, sandwich=TRUE, maxit=50)
+
+big_logmod = bigglm(reject ~ female + age + age2 + prd_perctminus1secc+ pan_perctminus1secc+ prd_perctminus1secc + turnout_tminus1secc + turnout_tminus1muni + homrate + homratechange +prop_sewage+ prdmayor+ panmayor+ prop_alfa+ lnpob+prop_alfa*female + prd_perctminus1secc*prdmayor + pan_perctminus1secc*panmayor, family = binomial("logit"), data = funcionarios2003, sandwich=TRUE, maxit=50)
+
+
+clear
+insheet using "/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley.txt", delimiter(";") 
+keep if year==2000
+export delimited using "/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2000.txt", delimiter(";") replace
+
+clear
+insheet using "/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley.txt", delimiter(";") 
+keep if year==2003
+export delimited using "/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2003.txt", delimiter(";") replace
+
+
+
+clear
+insheet using "/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley.txt", delimiter(";") 
+keep if year==2006
+export delimited using "/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2006.txt", delimiter(";") replace
+
+clear
+insheet using "/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley.txt", delimiter(";") 
+keep if year==2009
+export delimited using "/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2009.txt", delimiter(";") replace
+
+clear
+insheet using "/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley.txt", delimiter(";") 
+keep if year==2012
+export delimited using "/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2012.txt", delimiter(";") replace
+
+
+q()
+n
+
+cd /afs/crc.nd.edu/user/s/sleyguti/R
+setenv R_LIBS /afs/crc.nd.edu/user/s/sleyguti/R
+module load R
+R
+
+library(bigmemory)
+library(biglm)
+library(biganalytics)
+library(bigtabulate)
+
+funcionarios2006 <- read.big.matrix("/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2006.txt", sep = ";", header = TRUE, type = "double", backingfile = "funcionarios2006.bin", descriptor = "funcionarios2006.desc")
+
+
+q()
+n
+
+
+cd /afs/crc.nd.edu/user/s/sleyguti/R
+setenv R_LIBS /afs/crc.nd.edu/user/s/sleyguti/R
+module load R
+R
+
+library(bigmemory)
+library(biglm)
+library(biganalytics)
+library(bigtabulate)
+
+xfunc <- dget("/afs/crc.nd.edu/user/s/sleyguti/R/funcionarios2006.desc")
+funcionarios2006 <- attach.big.matrix(xfunc)
+
+big_logmod = bigglm(reject ~ female + age + age2 + prd_perctminus1secc+ pan_perctminus1secc+ prd_perctminus1secc + turnout_tminus1secc + turnout_tminus1muni + homrate + homratechange +percsenior+prop_sewage+ prdmayor+ panmayor+ prop_alfa+ lnpob+prop_alfa*female + prd_perctminus1secc*prdmayor + pan_perctminus1secc*panmayor, family = binomial("logit"), data = funcionarios2006, sandwich=TRUE, maxit=50)
+
+cd /afs/crc.nd.edu/user/s/sleyguti/R
+setenv R_LIBS /afs/crc.nd.edu/user/s/sleyguti/R
+module load R
+R
+
+library(bigmemory)
+library(biglm)
+library(biganalytics)
+library(bigtabulate)
+
+funcionarios2009 <- read.big.matrix("/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2009.txt", sep = ";", header = TRUE, type = "double", backingfile = "funcionarios2009.bin", descriptor = "funcionarios2009.desc")
+
+
+q()
+n
+
+
+cd /afs/crc.nd.edu/user/s/sleyguti/R
+setenv R_LIBS /afs/crc.nd.edu/user/s/sleyguti/R
+module load R
+R
+
+library(bigmemory)
+library(biglm)
+library(biganalytics)
+library(bigtabulate)
+
+xfunc <- dget("/afs/crc.nd.edu/user/s/sleyguti/R/funcionarios2009.desc")
+funcionarios2009 <- attach.big.matrix(xfunc)
+
+big_logmod = bigglm(reject ~ female + age + age2 + prd_perctminus1secc+ pan_perctminus1secc+ prd_perctminus1secc + turnout_tminus1secc + turnout_tminus1muni + homrate + homratechange +percsenior+prop_sewage+ prdmayor+ panmayor+ prop_alfa+ lnpob+prop_alfa*female + prd_perctminus1secc*prdmayor + pan_perctminus1secc*panmayor, family = binomial("logit"), data = funcionarios2009, sandwich=TRUE, maxit=50)
+
+summary(big_logmod)
+
+q()
+n
+
+cd /afs/crc.nd.edu/user/s/sleyguti/R
+setenv R_LIBS /afs/crc.nd.edu/user/s/sleyguti/R
+module load R
+R
+
+library(bigmemory)
+library(biglm)
+library(biganalytics)
+library(bigtabulate)
+
+funcionarios2012 <- read.big.matrix("/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2012.txt", sep = ";", header = TRUE, type = "double", backingfile = "funcionarios2012.bin", descriptor = "funcionarios2012.desc")
+
+
+q()
+n
+
+
+cd /afs/crc.nd.edu/user/s/sleyguti/R
+setenv R_LIBS /afs/crc.nd.edu/user/s/sleyguti/R
+module load R
+R
+
+library(bigmemory)
+library(biglm)
+library(biganalytics)
+library(bigtabulate)
+
+xfunc <- dget("/afs/crc.nd.edu/user/s/sleyguti/R/funcionarios2012.desc")
+funcionarios2012 <- attach.big.matrix(xfunc)
+
+big_logmod = bigglm(reject ~ female + age + age2 + prd_perctminus1secc+ pan_perctminus1secc+ prd_perctminus1secc + turnout_tminus1secc + turnout_tminus1muni + homrate + homratechange +percsenior+prop_sewage+ prdmayor+ panmayor+ prop_alfa+ lnpob+prop_alfa*female + prd_perctminus1secc*prdmayor + pan_perctminus1secc*panmayor, family = binomial("logit"), data = funcionarios2012, sandwich=TRUE, maxit=50)
+
+summary(big_logmod)
+
+
+xfunc <- dget("/afs/crc.nd.edu/user/s/sleyguti/R/funcionarios2000.desc")
+funcionarios2000 <- attach.big.matrix(xfunc)
+
+
+
+*************
+collapse (sum) hom_t hom_tminus1 hom_tminus2 hom_tminus3  lnmunit reject lnmunitminus1  lnmunitminus2  pritminus1muni  pritminus2muni   prdtminus1muni  prdtminus2muni pantminus1muni  pantminus2muni    totaltminus1muni  totaltminus2muni    primayor panmayor prdmayor other prop_alfa sexratio pob prop_sewage prop_electric, by (id_estado cve_inegi year)
+
+
+
+
+
+cd /afs/crc.nd.edu/user/s/sleyguti/R
+setenv R_LIBS /afs/crc.nd.edu/user/s/sleyguti/R
+module load R
+R
+
+library(bigmemory)
+library(biglm)
+library(biganalytics)
+library(bigtabulate)
+
+funcionarios2000 <- read.big.matrix("/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2000.txt", sep = ";", header = TRUE, type = "double", backingfile = "funcionarios2000.bin", descriptor = "funcionarios2000.desc")
+
+
+q()
+n
+
+cd /afs/crc.nd.edu/user/s/sleyguti/R
+setenv R_LIBS /afs/crc.nd.edu/user/s/sleyguti/R
+module load R
+R
+
+library(bigmemory)
+library(biglm)
+library(biganalytics)
+library(bigtabulate)
+
+funcionarios2003 <- read.big.matrix("/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2003.txt", sep = ";", header = TRUE, type = "double", backingfile = "funcionarios2003.bin", descriptor = "funcionarios2003.desc")
+
+
+q()
+n
+
+
+cd /afs/crc.nd.edu/user/s/sleyguti/R
+setenv R_LIBS /afs/crc.nd.edu/user/s/sleyguti/R
+module load R
+R
+
+library(bigmemory)
+library(biglm)
+library(biganalytics)
+library(bigtabulate)
+
+funcionarios2006 <- read.big.matrix("/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2006.txt", sep = ";", header = TRUE, type = "double", backingfile = "funcionarios2006.bin", descriptor = "funcionarios2006.desc")
+
+
+q()
+n
+
+cd /afs/crc.nd.edu/user/s/sleyguti/R
+setenv R_LIBS /afs/crc.nd.edu/user/s/sleyguti/R
+module load R
+R
+
+library(bigmemory)
+library(biglm)
+library(biganalytics)
+library(bigtabulate)
+
+funcionarios2009 <- read.big.matrix("//afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2009.txt", sep = ";", header = TRUE, type = "double", backingfile = "funcionarios2009.bin", descriptor = "funcionarios2009.desc")
+
+
+q()
+n
+
+cd /afs/crc.nd.edu/user/s/sleyguti/R
+setenv R_LIBS /afs/crc.nd.edu/user/s/sleyguti/R
+module load R
+R
+
+library(bigmemory)
+library(biglm)
+library(biganalytics)
+library(bigtabulate)
+
+funcionarios2012 <- read.big.matrix("/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley2012.txt", sep = ";", header = TRUE, type = "double", backingfile = "funcionarios2012.bin", descriptor = "funcionarios2012.desc")
+
+
+q()
+n

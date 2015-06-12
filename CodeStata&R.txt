@@ -1,7 +1,7 @@
 * Open file:
 
 
-use "/afs/crc.nd.edu/user/s/sleyguti/data060615_nomiss.dta”, clear
+use "/afs/crc.nd.edu/user/s/sleyguti/data060615_nomiss.dta", clear
 
 
 * Create new variables:
@@ -56,14 +56,14 @@ recode panstrg 0=1 if pan_perctminus1muni>prd_perctminus1muni & pan_perctminus1m
 
 **Dropping useless variables (and reducing the size of the file)
 
-a. Borrar variables
+*a. Borrar variables
 drop v1 lnsecct lnmunit lnsecctminus1 lnmunitminus1 lnsecctminus2 lnmunitminus2 pritminus1secc pantminus1secc prdtminus1secc totaltminus1secc pritminus1muni pantminus1muni prdtminus1muni totaltminus1muni pritminus2secc pantminus2secc prdtminus2secc totaltminus2secc pritminus2muni pantminus2muni prdtminus2muni totaltminus2muni pvemi pvemw senior cabecera distrito nombre_estado sexo notificacion nombramiento yearalternancia
 
 drop cve_inegi locality hom_tminus2 hom_tminus3 hom_tminus1 locality1 year2 id_mun nom_ent_inegi nom_mun_inegi cve_mun_inegi clave observaciones_notificacion observacion_nombramiento year1 id_seccion
 
 drop turnout_tminus2muni pan_perctminus2muni prd_perctminus2muni pri_perctminus2muni turnout_tminus1muni pan_perctminus1muni prd_perctminus1muni pri_perctminus1muni turnout_tminus2secc pan_perctminus2secc prd_perctminus2secc pri_perctminus2secc
 
-b. Borrar observaciones
+*b. Borrar observaciones
 drop if reject==.
 drop if homrate==.
 drop if primayor==.
@@ -74,7 +74,7 @@ drop if sexratio==.
 drop if prop_sewage==.
 
 
-4. Pasar la base a .txt
+*4. Pasar la base a .txt
 
 export delimited using "/afs/crc.nd.edu/user/s/sleyguti/Private/cantuley.txt", delimiter(";") replace
 

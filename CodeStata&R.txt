@@ -85,14 +85,14 @@ cd /afs/crc.nd.edu/user/s/sleyguti/R
 cp /tmp/for_sandra/*tar .
 
 module load R
-     R CMD INSTALL -l  /afs/crc.nd.edu/user/s/sleyguti/R bigmemory.sri_0.1.3.tar
-     R CMD INSTALL -l  /afs/crc.nd.edu/user/s/sleyguti/R BH_1.54.0-5.tar
-     R CMD INSTALL -l  /afs/crc.nd.edu/user/s/sleyguti/R bigmemory_4.4.6.tar
+R CMD INSTALL -l /afs/crc.nd.edu/user/s/sleyguti/R bigmemory.sri_0.1.3.tar
+R CMD INSTALL -l /afs/crc.nd.edu/user/s/sleyguti/R BH_1.54.0-5.tar
+R CMD INSTALL -l /afs/crc.nd.edu/user/s/sleyguti/R bigmemory_4.4.6.tar
 
 setenv R_LIBS /afs/crc.nd.edu/user/s/sleyguti/R
 
 
-6. Abrir R y cargar los paquetes
+*6. Abrir R y cargar los paquetes
 
 library(bigmemory)
 library(biglm)
